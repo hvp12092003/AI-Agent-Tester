@@ -1,0 +1,7 @@
+browser-use
+langgraph
+langchain-openai
+langchain-core
+python-docx
+python-dotenv
+requests
