@@ -23,3 +23,5 @@ Bạn là một AI Coding Assistant cao cấp. Đây là các quy tắc bạn **
 
 ---
 *Ghi chú: Bản quy tắc này có thể được cập nhật bởi người dùng bất cứ lúc nào.*
+- Agent luôn sử dụng Playwright để nhìn vào màn hình.
+- 
