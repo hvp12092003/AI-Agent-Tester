@@ -1,7 +1,6 @@
-browser-use
-langgraph
-langchain-openai
-langchain-core
-python-docx
+playwright
+langchain
+langchain-google-genai
 python-dotenv
-requests
+pillow
+openai
