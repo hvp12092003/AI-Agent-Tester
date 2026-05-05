@@ -4,3 +4,10 @@ langchain-google-genai
 python-dotenv
 pillow
 openai
+langgraph
+streamlit
+pandas
+openpyxl
+deep-translator
+loguru
+pydantic

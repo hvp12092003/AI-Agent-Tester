@@ -24,4 +24,6 @@ Bạn là một AI Coding Assistant cao cấp. Đây là các quy tắc bạn **
 ---
 *Ghi chú: Bản quy tắc này có thể được cập nhật bởi người dùng bất cứ lúc nào.*
 - Agent luôn sử dụng Playwright để nhìn vào màn hình.
-- 
+- **🚫 NGHIÊM CẤM**: Agent không bao giờ được đọc, tải về, hoặc gửi toàn bộ mã nguồn (source code) của website lên bất kỳ dịch vụ AI Cloud nào. Agent chỉ được phép tương tác với website thông qua giao diện trực quan (screenshot) và DOM elements — không được trích xuất hay truyền tải nội dung HTML/CSS/JS nguyên bản của trang web ra bên ngoài.
+- Luôn có hiệu ứng chuột trên màn hình để người dùng dễ dàng biết Agent đang làm gì.
+- Khi sửa 1 chức năng luôn phải xem luồng tổng thể của dự án xem có ảnh hưởng tới các chức năng khác không. Nếu có thì phải update lại luồng đó.    

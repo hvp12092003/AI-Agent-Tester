@@ -35,7 +35,13 @@ def create_graph():
         }
     )
     
-    # Sau khi Action thực thi xong, quay lại chụp ảnh (Vision) để kiểm tra kết quả
-    workflow.add_edge("action", "vision") 
-
+    # Sau khi Action thực thi xong, kiểm tra xem có cần dừng không, nếu không thì quay lại chụp ảnh (Vision)
+    workflow.add_conditional_edges(
+        "action",
+        should_continue,
+        {
+            "continue": "vision",
+            "end": END
+        }
+    )
     return workflow.compile()

@@ -1,5 +1,6 @@
 import asyncio
 import os
+import argparse
 from dotenv import load_dotenv
 from agents.llm_factory import LLMFactory
 from multi_agent.graph import create_graph
@@ -9,52 +10,91 @@ load_dotenv()
 llm_factory = LLMFactory()
 
 def get_available_models():
-    """Lấy danh sách các model có thể sử dụng từ provider hiện tại."""
+    """Fetch available models from current provider."""
     return llm_factory.get_available_models()
 
-async def run_agent(goal: str, url: str, model_name: str):
+async def run_agent(state: dict):
     app = create_graph()
     
-    initial_state = {
-        "goal": goal,
-        "url": url,
-        "screenshot": None,
-        "next_action": None,
-        "history": [],
-        "is_complete": False,
-        "model_name": model_name
-    }
-    
-    print(f"🚀 Bắt đầu chạy Multi-Agent Graph với model: {model_name}...")
-    async for event in app.astream(initial_state):
+    print(f"🚀 Starting Multi-Agent Graph with model: {state['model_name']}...")
+    async for event in app.astream(state):
         for node_name, state in event.items():
-            print(f"--- Kết thúc Node: {node_name} ---")
+            print(f"--- Node Finished: {node_name} ---")
             
     await BrowserManager.close()
-    print("🏁 Toàn bộ quy trình đã kết thúc.")
+    print("🏁 Execution complete.")
 
 if __name__ == "__main__":
-    # Yêu cầu người dùng nhập thông tin từ bàn phím
-    print("--- 🛠️ KHỞI TẠO AGENT TESTER ---")
+    parser = argparse.ArgumentParser(description="AI Security Agent Tester")
+    parser.add_argument("--url", help="Target website URL")
+    parser.add_argument("--goal", help="Custom goal for the agent")
+    parser.add_argument("--model", help="Model name (e.g., google/gemini-2.0-flash-001)")
+    parser.add_argument("--security", action="store_true", help="Enable security testing")
+    parser.add_argument("--ui", action="store_true", help="Enable UI testing")
+    parser.add_argument("--login-user", help="Login username")
+    parser.add_argument("--login-pass", help="Login password")
     
-    # 1. Chọn Model
+    args = parser.parse_args()
+    
+    print("--- 🛠️ INITIALIZING AGENT TESTER ---")
+    
+    # 1. Select Model
     available_models = get_available_models()
-    print("\n🤖 DANH SÁCH MODEL KHẢ DỤNG:")
-    for i, m in enumerate(available_models, 1):
-        print(f"  {i}. {m}")
-    
-    try:
-        choice = int(input(f"\n👉 Chọn số thứ tự model (1-{len(available_models)}): "))
-        selected_model = available_models[choice - 1]
-    except:
-        selected_model = "gemini-1.5-flash"
-        print(f"⚠️ Lựa chọn không hợp lệ, sử dụng mặc định: {selected_model}")
+    selected_model = args.model
+    if not selected_model:
+        # Default fallback or interactive if no model provided and no args
+        if not args.url:
+            print("\n🤖 AVAILABLE MODELS:")
+            for i, m in enumerate(available_models, 1):
+                print(f"  {i}. {m}")
+            try:
+                choice = int(input(f"\n👉 Select model number (1-{len(available_models)}): "))
+                selected_model = available_models[choice - 1]
+            except:
+                selected_model = "google/gemini-2.0-flash-001"
+        else:
+            selected_model = "google/gemini-2.0-flash-001"
 
-    # 2. Nhập URL và Goal
-    url = input("\n👉 Nhập URL trang web muốn test: ")
-    goal = input("👉 Nhập mục tiêu bạn muốn Agent thực hiện: ")
+    # 2. Setup URL and Goal
+    url = args.url
+    if not url:
+        url = input("\n👉 Enter target website URL: ")
     
     if not url.startswith("http"):
         url = "https://" + url
         
-    asyncio.run(run_agent(goal, url, selected_model))
+    goal = args.goal or "Thực hiện kiểm thử toàn diện UI và bảo mật. Khám phá các luồng chính trước, sau đó tập trung vào security testing (XSS, SQLi)."
+    
+    initial_state = {
+        "model_name": selected_model,
+        "goal": goal,
+        "mode": "test_web",
+        "url": url,
+        "base_url": url,
+        "screenshot": None,
+        "dom_elements": None,
+        "next_action": None,
+        "history": [],
+        "last_thought": None,
+        "findings": [],
+        "is_complete": False,
+        "global_url_queue": [],
+        "current_page_plan": [],
+        "clicked_selectors_blacklist": [],
+        "testing_url": url,
+        "phase": "planning",
+        "security_steps": 0,
+        "test_ui": args.ui or True,
+        "test_security": args.security or True,
+        "login_user": args.login_user,
+        "login_pass": args.login_pass,
+        "logged_in": False,
+        "master_plan": [],
+        "login_steps": 0,
+        "login_attempts": 0,
+        "path_steps": [],
+        "current_step_index": 0,
+        "security_memory": []
+    }
+    
+    asyncio.run(run_agent(initial_state))
