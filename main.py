@@ -21,8 +21,8 @@ async def run_agent(state: dict):
         for node_name, state in event.items():
             print(f"--- Node Finished: {node_name} ---")
             
-    await BrowserManager.close()
-    print("🏁 Execution complete.")
+    # Browser remains open for potential next tasks
+    print("🏁 Execution complete. Browser remains open.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Security Agent Tester")

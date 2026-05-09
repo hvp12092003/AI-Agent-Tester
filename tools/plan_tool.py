@@ -174,12 +174,11 @@ def get_queue_summary(queue: list) -> str:
 
 
 def get_base_identifier(item: dict) -> str:
-    """
-    Tạo định danh gốc cho phần tử (Text + Href rút gọn) để chống trùng lặp
-    khi CSS selector hoặc class thay đổi.
-    """
-    text = item.get("text", "").strip()
-    href = item.get("href", "")
+    """Tạo ID duy nhất dựa trên nội dung, thẻ và ngữ cảnh để tránh lọc nhầm."""
+    text = str(item.get("text", "")).strip().lower()
+    href = str(item.get("href", "")).strip().lower()
+    tag = str(item.get("tag", "")).strip().upper()
+    context = str(item.get("context", "")).strip().lower()
     
     # Rút gọn href: bỏ domain, giữ path + query
     base_href = href
@@ -197,7 +196,7 @@ def get_base_identifier(item: dict) -> str:
     if "javascript:void(0)" in href or "void(0)" in href:
         base_href = "js:void"
     
-    return f"{text}|{base_href}".lower()
+    return f"{tag}|{text}|{base_href}|{context}".lower()
 
 
 def create_page_plan(dom_elements: list, current_url: str = "", blacklist=None):
@@ -240,18 +239,21 @@ def create_page_plan(dom_elements: list, current_url: str = "", blacklist=None):
             if len(text) < 2 or text in ["Unnamed", "Image"] or is_destructive_element(text, href):
                 continue
 
-            # [CONTEXT DETECTION] Phân biệt Navigation vs Action
-            context = "Main Action"
+            # [CONTEXT DETECTION] Phân biệt Điều hướng vs Hành động
+            context = "Hành động chính"
             # Nhận diện Breadcrumb mạnh tay hơn
             is_breadcrumb = "breadcrumb" in css_selector.lower() or "breadcrumb" in href.lower() or (tag == "A" and href == "/")
+            is_sidebar = el.get("is_sidebar", False)
             
             if is_breadcrumb:
-                context = "Navigation Link (Breadcrumb/Home)"
+                context = "Liên kết điều hướng (Breadcrumb/Trang chủ)"
+            elif is_sidebar:
+                context = "Menu điều hướng (Sidebar)"
             elif tag == "A" and href and not any(kw in href.lower() for kw in ["add", "edit", "submit", "save", "delete", "create", "post", "put"]):
                 # Nếu là link A mà không có từ khóa hành động -> Thường là Navigation
-                context = "Navigation Link"
+                context = "Liên kết điều hướng"
             elif tag == "BUTTON" or "btn" in css_selector.lower() or "ivu-btn" in css_selector.lower() or "submit" in css_selector.lower():
-                context = "Functional Button"
+                context = "Nút chức năng"
             
             # Tạo item tạm thời để tính base_id
             temp_item = {"text": text, "href": href, "context": context}
@@ -271,7 +273,8 @@ def create_page_plan(dom_elements: list, current_url: str = "", blacklist=None):
                 "base_id": base_id,
                 "context": context,
                 "status": "unclicked",
-                "rect": rect
+                "rect": rect,
+                "is_sidebar": el.get("is_sidebar", False)
             })
         except Exception:
             continue
@@ -346,59 +349,52 @@ def is_page_complete(plan: list) -> bool:
     return all(p["status"] in ["clicked", "skipped"] for p in plan)
 
 
-def detect_plan_refresh(current_plan: list, dom_elements_str: str) -> list:
+def detect_plan_refresh(current_plan: list, dom_elements: list) -> list:
     """
     So sánh DOM mới quét được với page plan hiện tại.
-    Nếu phát hiện nội dung thay đổi đáng kể (ví dụ: pagination AJAX),
-    tự động rebuild page plan, giữ lại status cho các phần tử vẫn còn tồn tại.
-    
-    Returns: plan mới (hoặc plan cũ nếu không có thay đổi đáng kể).
+    - LUÔN cập nhật tọa độ rect cho các phần tử cũ nếu chúng vẫn tồn tại.
+    - Nếu phát hiện nội dung thay đổi đáng kể (>30%), rebuild page plan.
     """
-    if not current_plan or not dom_elements_str:
+    if not current_plan or not dom_elements:
         return current_plan
     
-    # Tạo page plan mới từ DOM hiện tại (sử dụng blacklist global nếu có thể)
-    # Tuy nhiên ở đây chúng ta chỉ rebuild để detect change, logic lọc blacklist chính nằm ở node gọi
-    new_plan = create_page_plan(dom_elements_str)
+    # 1. Tạo plan mới để so sánh
+    new_plan = create_page_plan(dom_elements)
     if not new_plan:
         return current_plan
     
-    # Tập hợp base_id từ plan cũ và plan mới
+    # Tạo map từ new_plan để tra cứu nhanh (key = base_id)
+    new_map = {p["base_id"]: p for p in new_plan}
+    
+    # 2. Cập nhật tọa độ cho các phần tử trong plan hiện tại
+    for item in current_plan:
+        if item["base_id"] in new_map:
+            # Cập nhật rect mới nhất để SOM marker vẽ đúng vị trí
+            item["rect"] = new_map[item["base_id"]]["rect"]
+
+    # 3. Tính tỷ lệ thay đổi để quyết định có refresh cấu trúc không
     old_ids = {p["base_id"] for p in current_plan}
     new_ids = {p["base_id"] for p in new_plan}
     
-    # Phần tử MỚI xuất hiện (có trong DOM mới nhưng KHÔNG có trong plan cũ)
     added = new_ids - old_ids
-    # Phần tử ĐÃ BIẾN MẤT (có trong plan cũ nhưng KHÔNG còn trong DOM mới)
     removed = old_ids - new_ids
     
-    # Tính tỷ lệ thay đổi
     total_elements = len(old_ids | new_ids)
-    changed_count = len(added) + len(removed)
+    if total_elements == 0: return current_plan
     
-    if total_elements == 0:
-        return current_plan
-    
-    change_ratio = changed_count / total_elements
-    
-    # Ngưỡng: Nếu >= 30% phần tử thay đổi → nội dung trang đã đổi (pagination/AJAX)
+    change_ratio = (len(added) + len(removed)) / total_elements
     CHANGE_THRESHOLD = 0.30
     
     if change_ratio >= CHANGE_THRESHOLD:
         print(f"🔄 DOM CHANGE DETECTED! {len(added)} new, {len(removed)} removed "
               f"({change_ratio:.0%} changed) → Refreshing page plan.")
         
-        # Tạo map status từ plan cũ (key = base_id)
+        # Giữ status từ plan cũ
         old_status_map = {p["base_id"]: p["status"] for p in current_plan}
-        
-        # Rebuild plan: giữ status cho phần tử vẫn còn tồn tại
         for item in new_plan:
             if item["base_id"] in old_status_map:
                 item["status"] = old_status_map[item["base_id"]]
-            # Phần tử mới → giữ "unclicked" (default)
         
-        new_unclicked = sum(1 for p in new_plan if p["status"] == "unclicked")
-        print(f"📋 Refreshed page plan: {len(new_plan)} elements ({new_unclicked} new to click)")
         return new_plan
     
     return current_plan
