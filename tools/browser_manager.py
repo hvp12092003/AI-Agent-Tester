@@ -41,10 +41,12 @@ class BrowserManager:
         """Internal helper to launch browser."""
         current_file_path = os.path.abspath(__file__)
         base_dir = os.path.dirname(os.path.dirname(current_file_path))
-        browsers_path = os.path.join(base_dir, "browsers")
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = browsers_path
+        # Chỉ dùng thư mục browsers riêng trên Windows (bản portable)
+        if os.name == 'nt':
+            browsers_path = os.path.join(base_dir, "browsers")
+            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = browsers_path
+            os.makedirs(browsers_path, exist_ok=True)
         
-        os.makedirs(browsers_path, exist_ok=True)
         lock_path = os.path.join(base_dir, ".browser_data", "SingletonLock")
         if os.path.exists(lock_path):
             try: os.remove(lock_path)
@@ -53,8 +55,11 @@ class BrowserManager:
         cls._playwright = await async_playwright().start()
         user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         
+        # Chạy ẩn (headless) khi ở trên Streamlit Cloud
+        is_cloud = os.environ.get("STREAMLIT_SHARING") is not None
+        
         cls._browser = await cls._playwright.chromium.launch(
-            headless=False,
+            headless=is_cloud,
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--window-position=0,0",

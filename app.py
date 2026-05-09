@@ -11,6 +11,13 @@ from tools.browser_manager import BrowserManager
 from deep_translator import GoogleTranslator
 from streamlit.runtime.scriptrunner import get_script_run_ctx, add_script_run_ctx
 
+# --- TU DONG CAI DAT TRINH DUYET CHO CLOUD ---
+if not os.path.exists("/tmp/playwright_installed"):
+    print("Installing Playwright browsers...")
+    os.system("python -m playwright install chromium")
+    with open("/tmp/playwright_installed", "w") as f:
+        f.write("done")
+
 @st.cache_data
 def translate_text(text, target_lang='vi'):
     if not text: return ""
