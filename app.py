@@ -12,16 +12,19 @@ from deep_translator import GoogleTranslator
 from streamlit.runtime.scriptrunner import get_script_run_ctx, add_script_run_ctx
 
 # --- TU DONG CAI DAT TRINH DUYET CHO CLOUD ---
-if not os.path.exists("/tmp/playwright_installed_v2"):
-    print("Installing Playwright browsers...")
-    # Thử cả 2 cách lệnh
+if not os.path.exists("/tmp/playwright_installed_v3"):
+    print("Installing Playwright browsers and system dependencies...")
+    # Bước 1: Cài đặt system dependencies cho Chromium (libcups2, libdbus, etc.)
+    os.system("playwright install-deps chromium 2>/dev/null || python -m playwright install-deps chromium 2>/dev/null || true")
+    
+    # Bước 2: Cài đặt Chromium browser
     res = os.system("playwright install chromium")
     if res != 0:
         res = os.system("python -m playwright install chromium")
     
     # Chỉ tạo file khóa nếu cài đặt thành công
     if res == 0:
-        with open("/tmp/playwright_installed_v2", "w") as f:
+        with open("/tmp/playwright_installed_v3", "w") as f:
             f.write("done")
 
 @st.cache_data

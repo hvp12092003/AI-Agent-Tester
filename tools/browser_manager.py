@@ -55,8 +55,13 @@ class BrowserManager:
         cls._playwright = await async_playwright().start()
         user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         
-        # Chạy ẩn (headless) khi ở trên Streamlit Cloud
-        is_cloud = os.environ.get("STREAMLIT_SHARING") is not None
+        # Chạy ẩn (headless) khi ở trên Streamlit Cloud hoặc server Linux không có display
+        is_cloud = (
+            os.environ.get("STREAMLIT_SHARING") is not None
+            or os.environ.get("STREAMLIT_SERVER_HEADLESS") == "true"
+            or os.path.exists("/home/appuser")  # Đặc trưng Streamlit Cloud
+            or not os.environ.get("DISPLAY")  # Linux không có GUI
+        )
         
         cls._browser = await cls._playwright.chromium.launch(
             headless=is_cloud,
