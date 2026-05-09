@@ -184,3 +184,8 @@ cython_debug/
 browsers/
 *.zip
 .DS_Store
+AI_Agent_Portable_Package/
+reports/*.xlsx
+COMMANDS.txt
+build_exe.bat
+launcher.py
