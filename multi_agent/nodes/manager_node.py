@@ -162,6 +162,28 @@ Update the 'task_plan' (mark current step as done/failed, add new steps if neede
         state["_empty_count"] = 0
         logger.info(f"🔍 AI Response:\n{response_text[:300]}...")
 
+        # === 4.5. DETECT API AUTH ERRORS (401/403) ===
+        if "[[API_ERROR]]" in response_text:
+            api_fail_count = state.get("_api_error_count", 0) + 1
+            state["_api_error_count"] = api_fail_count
+            logger.error(f"🚨 API Error #{api_fail_count}: {response_text[:200]}")
+            
+            if api_fail_count >= 2:
+                # Dừng hẳn sau 2 lần lỗi API liên tiếp
+                error_msg = response_text.replace("[[API_ERROR]]: ", "")
+                state["last_thought"] = f"❌ LỖI API: {error_msg[:150]}. Agent đã dừng. Vui lòng kiểm tra API Key."
+                state["is_complete"] = True
+                hist = state.get("history") or []
+                hist.append(f"❌ Agent dừng do lỗi API liên tiếp: {error_msg[:100]}")
+                state["history"] = hist
+                return state
+            
+            state["next_action"] = {"action": "wait"}
+            return state
+        
+        # Reset API error counter on success
+        state["_api_error_count"] = 0
+
         # === 5. PARSE JSON ===
         try:
             # Detect hallucinated tool outputs
