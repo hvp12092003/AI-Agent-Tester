@@ -412,7 +412,10 @@ async def run_agent_async(url, goal, model, login_user=None, login_pass=None):
         "login_user": login_user, 
         "login_pass": login_pass,
         "messages": [],
-        "task_plan": []
+        "task_plan": [],
+        "_api_error_count": 0,
+        "_empty_count": 0,
+        "_last_actions": [],
     }
     st.session_state.agent_state = initial_state
     

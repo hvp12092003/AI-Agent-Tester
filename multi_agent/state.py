@@ -32,3 +32,9 @@ class AgentState(TypedDict):
     # === Auth ===
     login_user: Optional[str]          # Login username (if provided)
     login_pass: Optional[str]          # Login password (if provided)
+    
+    # === Internal Counters (giữ giữa các vòng lặp graph) ===
+    _api_error_count: int              # Đếm lỗi API liên tiếp (dừng khi >= 2)
+    _empty_count: int                  # Đếm response rỗng liên tiếp
+    _last_actions: List[str]           # Danh sách action gần nhất (chống loop)
+
