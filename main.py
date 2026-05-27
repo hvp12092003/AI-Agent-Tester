@@ -79,7 +79,6 @@ if __name__ == "__main__":
         "findings": [],
         "is_complete": False,
         "global_url_queue": [],
-        "current_page_plan": [],
         "clicked_selectors_blacklist": [],
         "testing_url": url,
         "phase": "planning",

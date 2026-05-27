@@ -8,6 +8,9 @@ langgraph
 streamlit
 pandas
 openpyxl
+python-docx
 deep-translator
 loguru
 pydantic
+watchdog
+tabulate

@@ -25,9 +25,17 @@ async def action_node(state: AgentState) -> AgentState:
 
         tool_calls = next_action["tool_calls"]
         messages = state.get("messages") or []
-        plan = state.get("current_page_plan") or []
+        dom_elements = state.get("dom_elements") or []
         history = state.get("history") or []
         page = await BrowserManager.get_page()
+
+        # Find current step index
+        current_plan = state.get("task_plan") or []
+        current_idx = 0
+        for idx, step in enumerate(current_plan):
+            if step.get("status") not in ["done", "failed", "skipped"]:
+                current_idx = idx
+                break
 
         for i, tc in enumerate(tool_calls):
             tool_name = tc["name"]
@@ -46,10 +54,10 @@ async def action_node(state: AgentState) -> AgentState:
             if handler:
                 try:
                     # Inject context that tools might need
-                    result = await handler(**tool_args, plan=plan, page=page)
+                    result = await handler(**tool_args, plan=dom_elements, page=page)
                 except TypeError:
                     try:
-                        result = await handler(**tool_args, plan=plan)
+                        result = await handler(**tool_args, plan=dom_elements)
                     except TypeError:
                         try:
                             result = await handler(**tool_args)
@@ -61,6 +69,29 @@ async def action_node(state: AgentState) -> AgentState:
             else:
                 result = f"Error: Tool '{tool_name}' không tồn tại."
 
+            # Check for error messages in DOM if the action was a click or upload or type
+            if not "Error" in result and tool_name in ["click_element", "upload_file", "type_text", "select_option"]:
+                try:
+                    error_detected = await page.evaluate("""() => {
+                        const errorSelectors = ['.error-message', '.text-danger', '.ivu-form-item-error-tip', '.ant-form-item-explain-error'];
+                        for (const sel of errorSelectors) {
+                            const el = document.querySelector(sel);
+                            if (el && el.offsetParent !== null) {
+                                return el.innerText;
+                            }
+                        }
+                        const bodyText = document.body.innerText;
+                        if (bodyText.includes('Vui lòng tải lên ảnh') || bodyText.includes('Require')) {
+                            return 'Phát hiện thông báo lỗi trên màn hình.';
+                        }
+                        return null;
+                    }""")
+                    if error_detected:
+                        logger.warning(f"⚠️ Error detected in DOM after {tool_name}: {error_detected}")
+                        result = f"Error: Phát hiện lỗi trên giao diện sau khi thực hiện {tool_name}: {error_detected}"
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to check DOM errors: {e}")
+
             # === APPEND RESULT TO MESSAGES ===
             messages.append({
                 "role": "tool",
@@ -69,8 +100,24 @@ async def action_node(state: AgentState) -> AgentState:
                 "content": result,
             })
 
-            # Human-readable log
-            log_entry = f"{'✅' if '✅' in result else '❌'} {tool_name}"
+            # Human-readable log in Vietnamese
+            vietnamese_tool_names = {
+                "click_element": "Click phần tử",
+                "click_at_coordinates": "Click tọa độ",
+                "type_text": "Nhập văn bản",
+                "hover_element": "Rê chuột vào",
+                "scroll": "Cuộn trang",
+                "navigate_to": "Truy cập URL",
+                "select_option": "Chọn tùy chọn",
+                "upload_file": "Tải tệp lên",
+                "generate_test_file": "Tạo tệp kiểm thử",
+                "cleanup_test_assets": "Dọn dẹp tệp tạm",
+                "report_issue": "Báo cáo lỗi",
+                "finish_task": "Hoàn thành nhiệm vụ",
+                "wait": "Chờ đợi",
+            }
+            vn_name = vietnamese_tool_names.get(tool_name, tool_name)
+            log_entry = f"{'✅' if '✅' in result else '❌'} {vn_name}"
             eid = tool_args.get("element_id")
             if eid:
                 log_entry += f" [ID:{eid}]"
@@ -93,8 +140,8 @@ async def action_node(state: AgentState) -> AgentState:
                 state["is_complete"] = True
 
             # Track cursor position for screenshot
-            if eid and plan:
-                target = next((item for item in plan if item.get("som_id") == eid), None)
+            if eid and dom_elements:
+                target = next((item for item in dom_elements if item.get("som_id") == eid), None)
                 if target and "rect" in target:
                     try:
                         sx = await page.evaluate("window.scrollX")
@@ -117,6 +164,21 @@ async def action_node(state: AgentState) -> AgentState:
                 should_break = True
                 break_reason = f"Cancelled: Previous tool '{tool_name}' failed."
                 logger.warning(f"⚠️ Stopping tool sequence due to error in {tool_name}")
+                
+                # Increment fail count
+                step_retry_count = state.get("step_retry_count", 0) + 1
+                state["step_retry_count"] = step_retry_count
+                
+                logger.warning(f"⚠️ Tool failed. Step retry count: {step_retry_count}")
+                
+                if step_retry_count >= 3:
+                    if current_idx < len(current_plan):
+                        current_plan[current_idx]["status"] = "failed"
+                        logger.warning(f"⚠️ Step {current_idx} failed 3 times. Skipping.")
+                        history.append(f"⚠️ Bước [{current_idx}] thất bại 3 lần. Đánh dấu lỗi và bỏ qua.")
+                        
+                    state["step_retry_count"] = 0 # Reset
+                    state["task_plan"] = current_plan # Save plan update
             
             elif navigation_happened and i < len(tool_calls) - 1:
                 should_break = True
@@ -135,8 +197,8 @@ async def action_node(state: AgentState) -> AgentState:
                     })
                 break
                 
-            # 2. Wait for stabilization
-            await asyncio.sleep(0.5)
+            # 2. Minimal stabilization — vision_node instant capture handles the rest
+            await asyncio.sleep(0.1)
 
         state["messages"] = messages
         state["history"] = history

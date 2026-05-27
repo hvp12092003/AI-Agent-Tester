@@ -31,6 +31,15 @@ async def navigate_to(url: str, **ctx) -> str:
     if not page:
         return "Error: Browser not connected."
 
+    if url.startswith("/"):
+        from urllib.parse import urljoin
+        if page.url != "about:blank":
+            url = urljoin(page.url, url)
+        else:
+            return f"Error: Cannot navigate to relative URL '{url}' from 'about:blank'."
+    elif not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+
     try:
         await page.goto(url, wait_until="networkidle", timeout=15000)
     except Exception:

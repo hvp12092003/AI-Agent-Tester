@@ -7,18 +7,19 @@ from tools.browser_manager import BrowserManager
 SCREENSHOT_MAX_WIDTH = 1024  # Resize to max 1024px wide (saves ~60% tokens)
 SCREENSHOT_JPEG_QUALITY = 70  # JPEG compression (saves ~40% file size)
 
-async def capture_screenshot(url: str = None, cursor_pos: dict = None):
+async def capture_screenshot(url: str = None, cursor_pos: dict = None, wait_ms: int = 0):
     """
     Capture screenshot, compress and resize before sending to AI.
     Optionally draw a red dot at cursor_pos: {"x": float, "y": float}
+    wait_ms: milliseconds to wait before capturing (default 0 = instant)
     Returns base64 string (JPEG format for smaller size).
     """
     page = await BrowserManager.get_page()
     if url:
         await page.goto(url, wait_until="networkidle")
-    else:
-        # Wait for page to stabilize after actions
-        await page.wait_for_timeout(1000)
+    elif wait_ms > 0:
+        # Only wait if explicitly requested
+        await page.wait_for_timeout(wait_ms)
     
     # Remove all visual effect overlays before capturing clean screenshot
     try:

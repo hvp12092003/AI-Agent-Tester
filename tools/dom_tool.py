@@ -192,13 +192,13 @@ def format_elements(data: list) -> str:
     )
 
 
-async def inject_som_markers(page, plan):
+async def inject_som_markers(page, dom_elements=None):
     """
     Inject visual numbered markers (Set-of-Mark) onto the page.
     Uses FIXED positioning relative to the viewport for 100% accuracy in screenshots.
     """
-    if not plan:
-        return plan
+    if not dom_elements:
+        return
 
     injection_script = """
     () => {
@@ -272,8 +272,6 @@ async def inject_som_markers(page, plan):
         await page.evaluate(injection_script)
     except Exception as e:
         logger.error(f"❌ Error injecting SOM markers: {e}")
-
-    return plan
 
 
 async def cleanup_som_markers(page):

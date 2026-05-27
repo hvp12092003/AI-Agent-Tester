@@ -9,9 +9,11 @@ Responsibilities:
 5. Return observation to Manager
 """
 import asyncio
+import io
 import logging
 import base64
 from urllib.parse import urlparse
+from PIL import Image
 from multi_agent.state import AgentState
 from tools.vision_tool import capture_screenshot
 from tools.dom_tool import get_interactive_elements, inject_som_markers, cleanup_som_markers
@@ -49,49 +51,90 @@ async def vision_node(state: AgentState) -> AgentState:
                 state["base_url"] = f"{parsed.scheme}://{parsed.netloc}"
                 logger.info(f"🏠 Base domain: {state['base_url']}")
 
-        # === 2. STABILITY WAIT ===
+        # === 2. INSTANT SCREENSHOT — Capture notifications/toasts before they disappear ===
+        # Take a raw screenshot immediately (no DOM scan, no SOM markers) to catch flash messages
+        instant_screenshot = None
+        page_was_loading = False
+        try:
+            # Check if page is still loading
+            is_loading = await page.evaluate("document.readyState !== 'complete'")
+            page_was_loading = bool(is_loading)
+
+            # Instant capture with 0ms delay — catches toasts, alerts, and flash messages
+            raw_bytes = await page.screenshot(full_page=False)
+            img = Image.open(io.BytesIO(raw_bytes))
+            buf = io.BytesIO()
+            img.convert("RGB").save(buf, format="JPEG", quality=70, optimize=True)
+            instant_screenshot = base64.b64encode(buf.getvalue()).decode("utf-8")
+            logger.info(f"📸 Instant snapshot captured (page_loading={page_was_loading})")
+        except Exception as e:
+            logger.warning(f"⚠️ Instant snapshot failed: {e}")
+
+        # === 3. STABILITY WAIT ===
         # Wait for the page to be stable (DOM not changing much)
         try:
-            # Wait for network idle with a longer timeout for stability
-            await page.wait_for_load_state("networkidle", timeout=3500)
-            # Extra buffer for animations (especially dropdowns)
-            await asyncio.sleep(1.0)
+            await page.wait_for_load_state("networkidle", timeout=3000)
+            # Short buffer for CSS transitions/animations (dropdowns, modals)
+            await asyncio.sleep(0.3)
         except Exception:
-            # Fallback if networkidle takes too long
-            await asyncio.sleep(2.0)
+            # Fallback: brief wait if networkidle not reached
+            await asyncio.sleep(1.0)
 
-        # === 3. SCAN DOM ===
+        # If page was still loading during instant capture, take an additional mid-load screenshot
+        mid_screenshot = None
+        if page_was_loading:
+            try:
+                raw_bytes2 = await page.screenshot(full_page=False)
+                img2 = Image.open(io.BytesIO(raw_bytes2))
+                buf2 = io.BytesIO()
+                img2.convert("RGB").save(buf2, format="JPEG", quality=70, optimize=True)
+                mid_screenshot = base64.b64encode(buf2.getvalue()).decode("utf-8")
+                logger.info("📸 Mid-load snapshot captured (page was loading)")
+            except Exception as e:
+                logger.warning(f"⚠️ Mid-load snapshot failed: {e}")
+
+        # === 4. SCAN DOM ===
         dom_elements = await get_interactive_elements()
         if not isinstance(dom_elements, list):
             dom_elements = []
 
-        # === 4. CREATE PLAN + INJECT SOM MARKERS ===
-        from tools.plan_tool import create_page_plan
-        plan = create_page_plan(dom_elements, current_url=page.url)
-        plan = await inject_som_markers(page, plan)
+        # === 5. INJECT SOM MARKERS ===
+        await inject_som_markers(page, dom_elements)
 
-        # === 5. CAPTURE SCREENSHOT ===
+        # === 6. CAPTURE FINAL SCREENSHOT ===
         screenshot = await capture_screenshot(
-            cursor_pos=state.get("last_action_location")
+            cursor_pos=state.get("last_action_location"),
+            wait_ms=0  # Already waited above — capture immediately
         )
 
         # Cleanup SOM markers from DOM
         await cleanup_som_markers(page)
 
-        # === 6. UPDATE STATE ===
+        # Store extra snapshots so manager/validator can access them
+        # Priority: instant_screenshot (catches notifications) → mid_screenshot → final screenshot
+        extra_screenshots = []
+        if instant_screenshot and instant_screenshot != screenshot:
+            extra_screenshots.append(instant_screenshot)
+        if mid_screenshot and mid_screenshot != screenshot:
+            extra_screenshots.append(mid_screenshot)
+        state["extra_screenshots"] = extra_screenshots
+        if extra_screenshots:
+            logger.info(f"📸 Total snapshots this cycle: {1 + len(extra_screenshots)} (instant+mid+final)")
+
+        # === 7. UPDATE STATE ===
         state["screenshot"] = screenshot
         state["dom_elements"] = dom_elements
-        state["current_page_plan"] = plan
 
-        # Debug: save last screenshot to file
+        # Debug: save instant screenshot (most likely to contain flash notifications)
         try:
+            debug_img = instant_screenshot or screenshot
             with open("last_vision.jpg", "wb") as f:
-                f.write(base64.b64decode(screenshot))
+                f.write(base64.b64decode(debug_img))
         except Exception:
             pass
 
         hist = state.get("history") or []
-        hist.append(f"📸 Scanned page [{page.url}]: {len(plan)} interactive elements.")
+        hist.append(f"📸 Đã quét trang [{page.url}]: tìm thấy {len(dom_elements)} phần tử tương tác.")
         state["history"] = hist
 
         return state
@@ -99,6 +142,6 @@ async def vision_node(state: AgentState) -> AgentState:
     except Exception as e:
         logger.error(f"❌ Vision Node Error: {e}")
         hist = state.get("history") or []
-        hist.append(f"❌ Error observing page: {e}")
+        hist.append(f"❌ Lỗi khi quan sát trang: {e}")
         state["history"] = hist
         return state

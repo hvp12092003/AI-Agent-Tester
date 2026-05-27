@@ -64,17 +64,16 @@ class BrowserManager:
         )
         
         cls._browser = await cls._playwright.chromium.launch(
-            headless=is_cloud,
+            headless=False, # Đổi thành False để mở trình duyệt cho người dùng theo dõi
             args=[
                 "--disable-blink-features=AutomationControlled",
-                "--window-position=0,0",
-                "--window-size=1440,900",
+                "--start-maximized",  # Mở toàn màn hình ngay khi khởi động
             ],
         )
         
         cls._context = await cls._browser.new_context(
             user_agent=user_agent,
-            viewport={"width": 1440, "height": 900},
+            no_viewport=True,  # Không cố định viewport → browser tự dùng kích thước cửa sổ thực
         )
         
         # === AUTO-SWITCH TO NEW TABS ===

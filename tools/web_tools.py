@@ -68,7 +68,7 @@ async def click_element(element_id: int, plan: list = None, **ctx) -> str:
 
         # 4. Perform the click using the element handle
         await element.click(timeout=5000)
-        await asyncio.sleep(0.8)
+        await asyncio.sleep(0.3)
         return f"✅ Clicked [{element_id}]. URL: {page.url}"
 
     except Exception as e:
@@ -245,7 +245,7 @@ async def scroll(direction: str, **ctx) -> str:
     else:
         await page.evaluate("window.scrollBy(0, -window.innerHeight / 1.5)")
 
-    await asyncio.sleep(1.0)
+    await asyncio.sleep(0.5)
     pos = await page.evaluate("window.scrollY")
     return f"✅ Scrolled {direction}. Position: {pos}. URL: {page.url}"
 
@@ -305,7 +305,7 @@ async def click_at_coordinates(x: int, y: int, **ctx) -> str:
     await inject_visual_effects(page)
     await page.evaluate(f"window.showClickEffect({real_x}, {real_y})")
     await page.mouse.click(real_x, real_y)
-    await asyncio.sleep(1.0)
+    await asyncio.sleep(0.4)
 
     return f"✅ Clicked coordinates ({x}, {y}) [actual: {real_x:.0f}, {real_y:.0f}]. URL: {page.url}"
 

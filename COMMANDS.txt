@@ -1,35 +1,17 @@
-🚀 HƯỚNG DẪN CHẠY DỰ ÁN AI AGENT TESTER
+🚀 HƯỚNG DẪN CHẠY NHANH DỰ ÁN AI AGENT TESTER
 
-1. THIẾT LẬP MÔI TRƯỜNG (Chỉ chạy lần đầu)
-----------------------------------------
-# Tạo môi trường ảo
-python -m venv venv
+================================================================================
+1. KÍCH HOẠT MÔI TRƯỜNG ẢO (VENV)
+================================================================================
+# Di chuyển vào thư mục dự án (nếu chưa ở trong thư mục):
+cd "/Users/mrpazou/3DART/AI Agent/AI Agent Tester"
 
-# Kích hoạt môi trường (Mac/Linux)
+# Kích hoạt môi trường ảo:
+# - Trên macOS / Linux:
 source venv/bin/activate
 
-# Kích hoạt môi trường (Windows)
-# venv\Scripts\activate
-
-# Cài đặt thư viện
-pip install -r requirements.txt
-
-
-2. CÁCH CHẠY DỰ ÁN
-------------------
-# CÁCH 1: Chạy giao diện Web (Khuyên dùng)
+================================================================================
+2. KHỞI CHẠY DỰ ÁN (WEB DASHBOARD)
+================================================================================
+# Chạy giao diện Web Dashboard (đảm bảo venv đã được kích hoạt trước đó):
 streamlit run app.py
-
-# CÁCH 2: Chạy qua Terminal (CLI)
-python main.py --url "https://example.com" --goal "Kiểm tra bảo mật trang web"
-
-# CÁCH 3: Dùng file script có sẵn (Mac/Linux)
-./run_web.sh   # Chạy web
-./run.sh       # Chạy CLI
-
-
-3. CÁC FILE QUAN TRỌNG
-----------------------
-- .env: Chứa API KEY (GOOGLE_API_KEY hoặc OPENROUTER_API_KEY)
-- test_assets/: Chứa ảnh/file để upload khi test
-- requirements.txt: Danh sách thư viện cần thiết
