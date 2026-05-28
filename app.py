@@ -1722,7 +1722,7 @@ st.markdown(
 )
 
 # --- TỰ ĐỘNG PHÁT HIỆN THEME (LIGHT/DARK) & KÉO RỘNG SIDEBAR ---
-st.components.v1.html(
+st.html(
     """
     <script>
     const parentDoc = window.parent.document;
@@ -2005,9 +2005,7 @@ st.components.v1.html(
     setupTooltipPositioning();
     </script>
     """,
-    height=0,
-    width=0
-)
+    """)
 
 
 # --- KHỞI TẠO STATE ---
@@ -2131,7 +2129,7 @@ with col_sidebar:
     except Exception:
         col_logo, col_logo_text = st.columns([1, 4])
         with col_logo:
-            st.image("assets/ai_agent_logo.png", use_container_width=True)
+            st.image("assets/ai_agent_logo.png", width="stretch")
         with col_logo_text:
             st.markdown(
                 """
@@ -2293,7 +2291,7 @@ with col_sidebar:
                 generate_btn = st.button(
                     "⚡ Tạo",
                     key="tc_gen_btn",
-                    use_container_width=True,
+                    width="stretch",
                     type="primary",
                 )
 
@@ -2394,19 +2392,19 @@ with col_sidebar:
     start_btn = col_s1.button(
         "⚡ Chạy Test",
         type="primary",
-        use_container_width=True,
+        width="stretch",
         disabled=st.session_state.running or _is_building,
     )
     stop_btn = col_s2.button(
         "Dừng",
         type="secondary",
-        use_container_width=True,
+        width="stretch",
         disabled=(not st.session_state.running) or _is_building,
     )
     clear_btn = col_s3.button(
         "Xóa",
         type="secondary",
-        use_container_width=True,
+        width="stretch",
         disabled=st.session_state.running or _is_building,
     )
 
@@ -3003,7 +3001,7 @@ with col_center:
         with st.expander("📝 Chỉnh sửa Test Cases / Data Editor", expanded=False):
             edited_df = st.data_editor(
                 st.session_state.tc_gen_df,
-                use_container_width=True,
+                width="stretch",
                 num_rows="dynamic",
                 key="tc_editor_key",
                 column_config={
@@ -3031,9 +3029,9 @@ with col_center:
                 file_name="Test_Plan.md",
                 mime="text/markdown",
                 key="tc_gen_download_btn",
-                use_container_width=True,
+                width="stretch",
             )
-            if col_tc2.button("🗑️ Xóa Test Plan", key="tc_gen_clear_btn", use_container_width=True):
+            if col_tc2.button("🗑️ Xóa Test Plan", key="tc_gen_clear_btn", width="stretch"):
                 st.session_state.pop("tc_gen_result", None)
                 st.session_state.pop("tc_gen_parsed_text", None)
                 st.session_state.pop("tc_gen_error", None)

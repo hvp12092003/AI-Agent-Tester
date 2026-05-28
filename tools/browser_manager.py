@@ -59,8 +59,9 @@ class BrowserManager:
         is_cloud = (
             os.environ.get("STREAMLIT_SHARING") is not None
             or os.environ.get("STREAMLIT_SERVER_HEADLESS") == "true"
-            or os.path.exists("/home/appuser")  # Đặc trưng Streamlit Cloud
-            or not os.environ.get("DISPLAY")  # Linux không có GUI
+            or os.path.exists("/home/adminuser")  # Streamlit Cloud dùng adminuser
+            or os.path.exists("/home/appuser")    # Fallback cho các môi trường cũ
+            or not os.environ.get("DISPLAY")      # Linux không có GUI (bao gồm CI/CD)
         )
         
         cls._browser = await cls._playwright.chromium.launch(
