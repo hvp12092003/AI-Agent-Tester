@@ -185,8 +185,7 @@ browsers/
 *.zip
 .DS_Store
 AI_Agent_Portable_Package/
-reports/
-last_vision.jpg
+reports/*.xlsx
 COMMANDS.txt
 build_exe.bat
 launcher.py
