@@ -1043,6 +1043,20 @@ st.markdown(
         border-color: var(--border-secondary-btn-hover) !important;
     }
     
+    /* Disabled State styling for both buttons */
+    button[kind="primary"]:disabled, 
+    button[kind="secondary"]:disabled,
+    button[kind="primary"]:disabled:hover,
+    button[kind="secondary"]:disabled:hover {
+        background: var(--bg-secondary-btn) !important;
+        color: var(--text-secondary-btn) !important;
+        border-color: var(--border-secondary-btn) !important;
+        opacity: 0.45 !important;
+        cursor: not-allowed !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    
     /* Glass Cards */
     .glass-card {
         background: var(--bg-card) !important;
@@ -1391,8 +1405,6 @@ st.markdown(
     }
     .browser-viewport-screenshot {
         width: 100%;
-        max-height: 480px;
-        overflow-y: auto;
         background-color: var(--bg-browser-viewport-empty);
         display: block;
     }
@@ -1656,6 +1668,9 @@ st.markdown(
         /* Force tooltip text to always be readable */
         color: var(--text-help-tooltip, #c8d0e0) !important;
         -webkit-text-fill-color: var(--text-help-tooltip, #c8d0e0) !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        font-weight: normal !important;
         line-height: 1.5;
         box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(139, 92, 246, 0.2);
         transition: opacity 0.18s ease, visibility 0.18s ease;
@@ -2125,7 +2140,7 @@ with col_sidebar:
 
     # ── Dynamic Model Routing ─────────────────────────────────────────────
     st.markdown(
-        '<div class="section-header"><h4 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--theme-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5 5 3Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z"/></svg>Cấu hình Model<span class="help-icon" style="margin-left:6px;">?<span class="tooltip-box">Chọn model AI để điều khiển logic tổng thể (Brain) và model đánh giá kết quả (Evaluation). Brain Model cần mạnh, Evaluation Model có thể dùng model nhẹ hơn để tiết kiệm chi phí.</span></span></h4></div>',
+        '<div class="section-header"><h4 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--theme-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5 5 3Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z"/></svg>Cấu hình Model<span class="help-icon" style="margin-left:6px;">?<span class="tooltip-box" style="width: 260px;">🧠 <b>Brain Model (Điều khiển chính):</b><br/>Điều khiển logic tổng thể của Agent. Nên chọn model mạnh (ví dụ: Gemini 2.5 Pro) để đảm bảo độ chính xác.<br/><br/>🔍 <b>Evaluation Model (Đánh giá):</b><br/>Đánh giá kết quả thực tế so với kết quả mong đợi. Có thể chọn model nhẹ hơn (ví dụ: Gemini Flash) để tiết kiệm chi phí.</span></span></h4></div>',
         unsafe_allow_html=True,
     )
     # Brain model defaults to a powerful but cost-effective model
@@ -2172,7 +2187,7 @@ with col_sidebar:
 
     # ── Test Case Management ──────────────────────────────────────────────
     st.markdown(
-        '<div class="section-header"><h4 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--theme-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Test Cases<span class="help-icon" style="margin-left:6px;">?<span class="tooltip-box">Tải lên file kế hoạch kiểm thử (.xlsx, .csv, .json, .md). Agent sẽ tự động đọc và thực thi từng test case theo thứ tự. Hỗ trợ nhiều file cùng lúc để sinh test case tự động.</span></span></h4><div style="font-size: 14px; font-weight: bold; color: var(--text-label); cursor: pointer;">+</div></div>',
+        '<div class="section-header"><h4 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--theme-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Test Cases<span class="help-icon" style="margin-left:6px;">?<span class="tooltip-box" style="width: 280px;">📄 <b>1. Tài liệu sinh Test Case (Đặc tả):</b><br/>Tải lên các tài liệu đặc tả, yêu cầu hệ thống (.docx, .xlsx, .csv, .md, .json). Agent sẽ tự động phân tích để thiết kế và sinh ra kịch bản kiểm thử (Test Plan).<br/><br/>📥 <b>2. Nạp Test Case sẵn có (Chạy ngay):</b><br/>Nạp một file kịch bản có sẵn (.md dạng bảng hoặc .json). Agent sẽ đọc và chạy trực tiếp từng test case theo kịch bản đó mà không cần sinh lại.</span></span></h4><div style="font-size: 14px; font-weight: bold; color: var(--text-label); cursor: pointer;">+</div></div>',
         unsafe_allow_html=True,
     )
 

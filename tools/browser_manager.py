@@ -73,7 +73,7 @@ class BrowserManager:
         
         cls._context = await cls._browser.new_context(
             user_agent=user_agent,
-            no_viewport=True,  # Không cố định viewport → browser tự dùng kích thước cửa sổ thực
+            viewport={"width": 1280, "height": 800},
         )
         
         # === AUTO-SWITCH TO NEW TABS ===
