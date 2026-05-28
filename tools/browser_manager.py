@@ -64,7 +64,7 @@ class BrowserManager:
         )
         
         cls._browser = await cls._playwright.chromium.launch(
-            headless=False, # Đổi thành False để mở trình duyệt cho người dùng theo dõi
+            headless=is_cloud,  # Chạy ẩn (headless) nếu ở trên cloud/không có display
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--start-maximized",  # Mở toàn màn hình ngay khi khởi động
