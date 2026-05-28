@@ -1722,7 +1722,7 @@ st.markdown(
 )
 
 # --- TỰ ĐỘNG PHÁT HIỆN THEME (LIGHT/DARK) & KÉO RỘNG SIDEBAR ---
-st.html(
+st.components.v1.html(
     """
     <script>
     const parentDoc = window.parent.document;
@@ -2005,7 +2005,9 @@ st.html(
     setupTooltipPositioning();
     </script>
     """,
-    """)
+    height=0,
+    width=0
+)
 
 
 # --- KHỞI TẠO STATE ---
@@ -2210,7 +2212,7 @@ with col_sidebar:
         st.markdown(
             """
             <div class="custom-alert-success">
-                <span class="alert-icon">✓</span>
+                <span class="alert-icon">&#10003;</span>
                 <span class="alert-text">Đã tải kế hoạch kiểm thử thành công</span>
             </div>
             """,
@@ -2975,11 +2977,11 @@ with col_center:
                         
                         icon_html = '<span class="item-icon todo">○</span>'
                         if case_status == "passed":
-                            icon_html = '<span class="item-icon passed" style="color: #ffffff; line-height: 14px;">✓</span>'
+                            icon_html = '<span class="item-icon passed" style="color: #ffffff; line-height: 14px;">&#10003;</span>'
                         elif case_status == "failed":
-                            icon_html = '<span class="item-icon failed" style="color: #ffffff; line-height: 14px;">✗</span>'
+                            icon_html = '<span class="item-icon failed" style="color: #ffffff; line-height: 14px;">&#10007;</span>'
                         elif case_status == "doing":
-                            icon_html = '<span class="item-icon doing" style="color: #ffffff; line-height: 14px;">⟳</span>'
+                            icon_html = '<span class="item-icon doing" style="color: #ffffff; line-height: 14px;">&#10227;</span>'
                             
                         desc = ', '.join(steps[:2]) + ('...' if len(steps) > 2 else '')
                         accordion_html += f"""
