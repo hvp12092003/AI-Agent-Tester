@@ -1711,6 +1711,11 @@ st.markdown(
     iframe[width="0"][height="0"] {
         display: none !important;
     }
+    /* Hide the default "Press ⌘+Enter to apply" shortcut instruction */
+    .stTextArea [data-testid="stCaptionContainer"],
+    div[data-testid="InputInstructions"] {
+        display: none !important;
+    }
     </style>
 """,
     unsafe_allow_html=True,
