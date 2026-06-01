@@ -4,6 +4,7 @@ Quản lý hàng đợi URL (global_url_queue) và kế hoạch trang (current_p
 để Agent có thể kiểm thử website một cách có hệ thống.
 """
 from urllib.parse import urlparse
+from typing import Union, Dict, Any
 
 
 MAX_QUEUE_SIZE = 20  # Giới hạn tối đa số URL trong queue
@@ -139,7 +140,7 @@ def add_url(queue: list, url: str, base_domain: str) -> bool:
     return True
 
 
-def get_next_pending(queue: list) -> dict | None:
+def get_next_pending(queue: list) -> Union[dict, None]:
     """Lấy URL pending tiếp theo trong queue."""
     for item in queue:
         if item["status"] == "pending":
@@ -283,7 +284,7 @@ def create_page_plan(dom_elements: list, current_url: str = "", blacklist=None):
     return plan
 
 
-def get_next_unclicked(plan: list) -> dict | None:
+def get_next_unclicked(plan: list) -> Union[dict, None]:
     """Lấy phần tử unclicked tiếp theo trong page plan."""
     for item in plan:
         if item["status"] == "unclicked":

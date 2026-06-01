@@ -5,6 +5,7 @@ All tools auto-register via @register_tool decorator.
 """
 import asyncio
 import logging
+from typing import Union
 from tools.tool_registry import register_tool
 from tools.browser_manager import BrowserManager
 from tools.utils import inject_visual_effects
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 # ============================================================
 # HELPER: Resolve SOM ID → element metadata from plan
 # ============================================================
-def _resolve_element(element_id: int, plan: list) -> dict | None:
+def _resolve_element(element_id: int, plan: list) -> Union[dict, None]:
     """Find element in plan by SOM ID."""
     return next((item for item in plan if item.get("som_id") == element_id), None)
 
